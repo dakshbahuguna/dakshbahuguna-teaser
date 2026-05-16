@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -27,6 +27,12 @@ const BREATH = 6.6667
 const BAND_DELAY = 0.1092
 const SEG_STAGGER = 0
 
+// Corner-eraser wedge: concave fillet between a sharp 90° corner at the
+// origin and a quarter-circle of radius R rounding it.
+const CORNER_R = 0.015
+const CORNER_Z = FRONT_Z + 0.001
+const CORNER_RENDER_ORDER = 10
+
 function BezelSegments({
   segmentsBandsRef,
 }: {
@@ -37,6 +43,27 @@ function BezelSegments({
   const centers = Array.from(
     { length: SEG_COUNT },
     (_, i) => Math.PI / 2 - (i * 2 * Math.PI) / SEG_COUNT,
+  )
+
+  // One ShapeGeometry shared across all 32 wedges. The arc parameter uses
+  // clockwise=true so the sweep is a 90° quarter-circle curving toward
+  // origin (CCW from -π/2 to π would trace 270°).
+  const wedgeGeom = useMemo(() => {
+    const shape = new THREE.Shape()
+    shape.moveTo(0, 0)
+    shape.lineTo(CORNER_R, 0)
+    shape.absarc(CORNER_R, CORNER_R, CORNER_R, -Math.PI / 2, Math.PI, true)
+    shape.lineTo(0, 0)
+    return new THREE.ShapeGeometry(shape)
+  }, [])
+  // DoubleSide so scale.y = -1 mirrored instances still face the camera.
+  const wedgeMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: '#0a0a0a',
+        side: THREE.DoubleSide,
+      }),
+    [],
   )
 
   return (
@@ -68,6 +95,67 @@ function BezelSegments({
           </group>
         )
       })}
+      {/* 32 corner-eraser wedges — 4 per segment, sculpt rounded corners */}
+      <group>
+        {centers.map((centerAngle, i) => {
+          const thetaStart = centerAngle - arc / 2
+          const thetaEnd = thetaStart + arc
+          const innerLeftPos: [number, number, number] = [
+            BAND_INNER * Math.cos(thetaStart),
+            BAND_INNER * Math.sin(thetaStart),
+            CORNER_Z,
+          ]
+          const innerRightPos: [number, number, number] = [
+            BAND_INNER * Math.cos(thetaEnd),
+            BAND_INNER * Math.sin(thetaEnd),
+            CORNER_Z,
+          ]
+          const outerLeftPos: [number, number, number] = [
+            BAND_OUTER * Math.cos(thetaStart),
+            BAND_OUTER * Math.sin(thetaStart),
+            CORNER_Z,
+          ]
+          const outerRightPos: [number, number, number] = [
+            BAND_OUTER * Math.cos(thetaEnd),
+            BAND_OUTER * Math.sin(thetaEnd),
+            CORNER_Z,
+          ]
+          return (
+            <group key={`wedge-seg-${i}`}>
+              <mesh
+                geometry={wedgeGeom}
+                material={wedgeMaterial}
+                position={innerLeftPos}
+                rotation={[0, 0, thetaStart]}
+                renderOrder={CORNER_RENDER_ORDER}
+              />
+              <mesh
+                geometry={wedgeGeom}
+                material={wedgeMaterial}
+                position={innerRightPos}
+                rotation={[0, 0, thetaEnd]}
+                scale={[1, -1, 1]}
+                renderOrder={CORNER_RENDER_ORDER}
+              />
+              <mesh
+                geometry={wedgeGeom}
+                material={wedgeMaterial}
+                position={outerLeftPos}
+                rotation={[0, 0, thetaStart + Math.PI]}
+                scale={[1, -1, 1]}
+                renderOrder={CORNER_RENDER_ORDER}
+              />
+              <mesh
+                geometry={wedgeGeom}
+                material={wedgeMaterial}
+                position={outerRightPos}
+                rotation={[0, 0, thetaEnd + Math.PI]}
+                renderOrder={CORNER_RENDER_ORDER}
+              />
+            </group>
+          )
+        })}
+      </group>
       {/* subtle outer rim accent kept off — depth handled by segments themselves */}
       <mesh position={[0, 0, FRONT_Z - 0.001]}>
         <ringGeometry args={[SEG_OUTER, SEG_OUTER + SEG_THICKNESS * 0.1, 64]} />
