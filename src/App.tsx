@@ -1,5 +1,5 @@
-import { useMemo, useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 const ORANGE = 0xff5b14
@@ -284,21 +284,41 @@ function HeroForm() {
   )
 }
 
+function ResponsiveCamera({ isMobile }: { isMobile: boolean }) {
+  const { camera } = useThree()
+  useEffect(() => {
+    camera.position.z = isMobile ? 22 : 14
+    camera.updateProjectionMatrix()
+  }, [camera, isMobile])
+  return null
+}
+
 export default function App() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   return (
     <>
       <div
         style={{
           position: 'fixed',
-          top: '0vh',
+          top: isMobile ? '6vh' : '0vh',
           left: '50%',
           transform: 'translateX(-50%)',
           color: '#1d1d1d',
           fontFamily: "'JetBrains Mono', ui-monospace, monospace",
           fontWeight: 700,
-          fontSize: 140,
+          fontSize: 'clamp(48px, 14vw, 140px)',
           letterSpacing: '0.05em',
-          whiteSpace: 'nowrap',
+          whiteSpace: isMobile ? 'normal' : 'nowrap',
+          textAlign: 'center',
+          lineHeight: isMobile ? 0.95 : 1,
+          wordSpacing: isMobile ? '100vw' : 'normal',
           pointerEvents: 'none',
         }}
       >
@@ -325,8 +345,10 @@ export default function App() {
       <div
         style={{
           position: 'fixed',
-          bottom: 32,
-          right: 32,
+          bottom: isMobile ? 80 : 32,
+          right: isMobile ? 'auto' : 32,
+          left: isMobile ? '50%' : 'auto',
+          transform: isMobile ? 'translateX(-50%)' : 'none',
           color: '#585858',
           fontFamily: "'JetBrainsMono-Bold', ui-monospace, monospace",
           fontSize: 13,
@@ -388,6 +410,7 @@ export default function App() {
           intensity={0.6}
           color="#C8D2E0"
         />
+        <ResponsiveCamera isMobile={isMobile} />
         <HeroForm />
       </Canvas>
     </>
