@@ -3,6 +3,9 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 const ORANGE = 0xff5b14
+const ORANGE_BRIGHT = new THREE.Color('#FF5B14')
+const ORANGE_DARK = new THREE.Color('#2a1a0e')
+const BASE_LIGHT_LEVEL = 0.12
 const SEG_COUNT = 8
 const SEG_ARC_DEG = 40
 const SEG_INNER = 1.0
@@ -42,8 +45,6 @@ function BezelSegments({
             />
             <meshBasicMaterial
               color={ORANGE}
-              transparent
-              opacity={0.2}
               side={THREE.DoubleSide}
             />
           </mesh>
@@ -131,8 +132,12 @@ function HeroForm() {
         1,
       )
       const eased = x * x * (3 - 2 * x)
-      const opacity = 0.2 + 0.8 * eased
-      ;(seg.material as THREE.MeshBasicMaterial).opacity = opacity
+      const lerpT = BASE_LIGHT_LEVEL + (1 - BASE_LIGHT_LEVEL) * eased
+      ;(seg.material as THREE.MeshBasicMaterial).color.lerpColors(
+        ORANGE_DARK,
+        ORANGE_BRIGHT,
+        lerpT,
+      )
     })
   })
 
