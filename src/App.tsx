@@ -9,7 +9,6 @@ const BASE_LIGHT_LEVEL = 0.12
 const SEG_COUNT = 8
 const BAND_COUNT = 12
 const SEG_ARC_DEG = 42
-const SEG_INNER = 1.0
 const SEG_OUTER = 1.15
 const SEG_THICKNESS = 0.08
 const FRONT_Z = 0.76
