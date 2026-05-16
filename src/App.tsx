@@ -180,7 +180,7 @@ export default function App() {
       <div
         style={{
           position: 'fixed',
-          top: '1vh',
+          top: '0vh',
           left: '50%',
           transform: 'translateX(-50%)',
           color: '#1d1d1d',
@@ -198,10 +198,10 @@ export default function App() {
       <div
         style={{
           position: 'fixed',
-          top: '78vh',
+          bottom: 32,
           left: '50%',
           transform: 'translateX(-50%)',
-          color: '#E3E3E3',
+          color: '#9a9a9a',
           fontFamily: "'JetBrainsMono-Bold', ui-monospace, monospace",
           fontSize: 18,
           letterSpacing: '0.02em',
@@ -215,15 +215,37 @@ export default function App() {
       <div
         style={{
           position: 'fixed',
-          bottom: 24,
-          left: 24,
+          bottom: 32,
+          right: 32,
           color: '#585858',
           fontFamily: "'JetBrainsMono-Bold', ui-monospace, monospace",
           fontSize: 13,
           letterSpacing: '0.02em',
           pointerEvents: 'none',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
         }}
       >
+        <svg
+          width="14"
+          height="11"
+          viewBox="0 0 14 11"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ flexShrink: 0 }}
+        >
+          <rect
+            x="0.5"
+            y="0.5"
+            width="13"
+            height="10"
+            rx="1"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+          <path d="M0.5 0.5L7 6L13.5 0.5" stroke="currentColor" strokeWidth="1" />
+        </svg>
         dakshbahuguna@gmail.com
       </div>
 
