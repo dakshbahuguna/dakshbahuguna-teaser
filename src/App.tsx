@@ -7,47 +7,65 @@ const ORANGE_BRIGHT = new THREE.Color('#FF5B14')
 const ORANGE_DARK = new THREE.Color('#2a1a0e')
 const BASE_LIGHT_LEVEL = 0.12
 const SEG_COUNT = 8
-const SEG_ARC_DEG = 40
+const BAND_COUNT = 12
+const SEG_ARC_DEG = 42
 const SEG_INNER = 1.0
 const SEG_OUTER = 1.15
 const SEG_THICKNESS = 0.08
 const FRONT_Z = 0.76
 
-function BezelSegments({
-  segmentsRef,
-}: {
-  segmentsRef: React.MutableRefObject<(THREE.Mesh | null)[]>
-}) {
-  // Ring of 8 segments. 12 o'clock = +Y. Clockwise progression.
-  // Segment angular center (radians) — start at +π/2, decrease by 2π/8 each step.
-  const segments = Array.from({ length: SEG_COUNT }, (_, i) => {
-    const centerAngle = Math.PI / 2 - (i * 2 * Math.PI) / SEG_COUNT
-    return { i, centerAngle }
-  })
+// Six contiguous flat annular slices per segment. Radial extent runs
+// edge-to-edge from BAND_INNER to BAND_OUTER (the centers of the previous
+// 3-torus version) so neighboring bands share hard edges — no grooves.
+const BAND_INNER = 1.0
+const BAND_OUTER = 1.15
+const BAND_WIDTH = (BAND_OUTER - BAND_INNER) / BAND_COUNT
 
-  // RingGeometry with thetaStart/thetaLength gives a flat arc segment.
+// All segments breathe in unison; inner→outer ripple per segment remains.
+const PERIOD = 6.6667
+const BREATH = 6.6667
+const BAND_DELAY = 0.1092
+const SEG_STAGGER = 0
+
+function BezelSegments({
+  segmentsBandsRef,
+}: {
+  segmentsBandsRef: React.MutableRefObject<(THREE.Mesh | null)[][]>
+}) {
   const arc = (SEG_ARC_DEG * Math.PI) / 180
+  // 12 o'clock = +Y. Clockwise progression: segment i centered at π/2 - i*(2π/8).
+  const centers = Array.from(
+    { length: SEG_COUNT },
+    (_, i) => Math.PI / 2 - (i * 2 * Math.PI) / SEG_COUNT,
+  )
 
   return (
     <>
-      {segments.map(({ i, centerAngle }) => {
+      {centers.map((centerAngle, i) => {
         const thetaStart = centerAngle - arc / 2
         return (
-          <mesh
-            key={i}
-            ref={(el) => {
-              segmentsRef.current[i] = el
-            }}
-            position={[0, 0, FRONT_Z]}
-          >
-            <ringGeometry
-              args={[SEG_INNER, SEG_OUTER, 48, 1, thetaStart, arc]}
-            />
-            <meshBasicMaterial
-              color={ORANGE}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
+          <group key={i}>
+            {Array.from({ length: BAND_COUNT }, (_, j) => {
+              const innerR = BAND_INNER + j * BAND_WIDTH
+              const outerR = BAND_INNER + (j + 1) * BAND_WIDTH
+              return (
+                <mesh
+                  key={j}
+                  ref={(el) => {
+                    if (!segmentsBandsRef.current[i])
+                      segmentsBandsRef.current[i] = []
+                    segmentsBandsRef.current[i][j] = el
+                  }}
+                  position={[0, 0, FRONT_Z]}
+                >
+                  <ringGeometry
+                    args={[innerR, outerR, 32, 1, thetaStart, arc]}
+                  />
+                  <meshBasicMaterial color={ORANGE} side={THREE.DoubleSide} />
+                </mesh>
+              )
+            })}
+          </group>
         )
       })}
       {/* subtle outer rim accent kept off — depth handled by segments themselves */}
@@ -117,28 +135,33 @@ function Piston({
 }
 
 function HeroForm() {
-  const segmentsRef = useRef<(THREE.Mesh | null)[]>([])
+  const segmentsBandsRef = useRef<(THREE.Mesh | null)[][]>([])
 
   useFrame(({ clock }) => {
-    const CYCLE = 12
-    const SOFTNESS = 0.08
-    const t = clock.elapsedTime % CYCLE
-    const progress = (1 - Math.cos((2 * Math.PI * t) / CYCLE)) / 2
-    segmentsRef.current.forEach((seg, i) => {
-      if (!seg) return
-      const target = (i + 1) / SEG_COUNT
-      const x = Math.min(
-        Math.max((progress - (target - SOFTNESS)) / SOFTNESS, 0),
-        1,
-      )
-      const eased = x * x * (3 - 2 * x)
-      const lerpT = BASE_LIGHT_LEVEL + (1 - BASE_LIGHT_LEVEL) * eased
-      ;(seg.material as THREE.MeshBasicMaterial).color.lerpColors(
-        ORANGE_DARK,
-        ORANGE_BRIGHT,
-        lerpT,
-      )
-    })
+    const time = clock.elapsedTime
+    for (let i = 0; i < SEG_COUNT; i++) {
+      const segArr = segmentsBandsRef.current[i]
+      if (!segArr) continue
+      for (let j = 0; j < BAND_COUNT; j++) {
+        const arcMesh = segArr[j]
+        if (!arcMesh) continue
+        const t_arc =
+          (((time - i * SEG_STAGGER - j * BAND_DELAY) % PERIOD) + PERIOD) %
+          PERIOD
+        let eased = 0
+        if (t_arc <= BREATH) {
+          const x = t_arc / BREATH
+          const raw = 1 - Math.pow(2 * x - 1, 2)
+          eased = raw * raw * (3 - 2 * raw)
+        }
+        const lerpT = BASE_LIGHT_LEVEL + (1 - BASE_LIGHT_LEVEL) * eased
+        ;(arcMesh.material as THREE.MeshBasicMaterial).color.lerpColors(
+          ORANGE_DARK,
+          ORANGE_BRIGHT,
+          lerpT,
+        )
+      }
+    }
   })
 
   return (
@@ -169,7 +192,7 @@ function HeroForm() {
       </mesh>
 
       {/* Bezel ring (8 segments) */}
-      <BezelSegments segmentsRef={segmentsRef} />
+      <BezelSegments segmentsBandsRef={segmentsBandsRef} />
     </group>
   )
 }
