@@ -172,35 +172,6 @@ function HeroForm() {
 export default function App() {
   return (
     <>
-      <Canvas
-        camera={{ position: [0, 0, 14], fov: 14 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
-        dpr={[1, 2]}
-        onCreated={({ camera }) => {
-          camera.lookAt(0, 0, 0)
-        }}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          width: '100vw',
-          height: '100vh',
-        }}
-      >
-        <color attach="background" args={['#0a0a0a']} />
-        <ambientLight intensity={1.2} />
-        <directionalLight
-          position={[4, 4, 3]}
-          intensity={1.4}
-          color="#E8E2D4"
-        />
-        <directionalLight
-          position={[-3, 1, 2]}
-          intensity={0.6}
-          color="#C8D2E0"
-        />
-        <HeroForm />
-      </Canvas>
-
       <div
         style={{
           position: 'fixed',
@@ -249,6 +220,38 @@ export default function App() {
       >
         dakshbahuguna@gmail.com
       </div>
+
+      <Canvas
+        camera={{ position: [0, 0, 14], fov: 14 }}
+        gl={{
+          alpha: true,
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+        }}
+        dpr={[1, 2]}
+        onCreated={({ camera }) => {
+          camera.lookAt(0, 0, 0)
+        }}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+        }}
+      >
+        <ambientLight intensity={1.2} />
+        <directionalLight
+          position={[4, 4, 3]}
+          intensity={1.4}
+          color="#E8E2D4"
+        />
+        <directionalLight
+          position={[-3, 1, 2]}
+          intensity={0.6}
+          color="#C8D2E0"
+        />
+        <HeroForm />
+      </Canvas>
     </>
   )
 }
