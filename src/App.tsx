@@ -180,12 +180,13 @@ export default function App() {
       <div
         style={{
           position: 'fixed',
-          top: '12vh',
+          top: '1vh',
           left: '50%',
           transform: 'translateX(-50%)',
-          color: '#FF5B14',
-          fontFamily: "'JetBrainsMono-Bold', ui-monospace, monospace",
-          fontSize: 64,
+          color: '#1d1d1d',
+          fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+          fontWeight: 700,
+          fontSize: 140,
           letterSpacing: '0.05em',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
